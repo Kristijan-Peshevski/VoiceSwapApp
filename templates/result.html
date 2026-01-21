@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Result</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #222; color: #fff; }
+        .box { background: #333; padding: 30px; border-radius: 10px; display: inline-block; }
+        a { color: #00d2ff; text-decoration: none; margin-top: 20px; display: block; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>✨ Transformation Complete! ✨</h1>
+        <audio controls autoplay>
+            <source src="{{ audio_url }}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        <br><br>
+        <a href="{{ audio_url }}" download>⬇️ Download MP3</a>
+        <a href="/">🔄 Convert Another Song</a>
+    </div>
+</body>
+</html>
