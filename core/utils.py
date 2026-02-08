@@ -10,13 +10,12 @@ def handle_voice_swap(input_song_path, model_path, index_path, output_dir, devic
     song_name = os.path.splitext(os.path.basename(input_song_path))[0]
     separated_folder = os.path.join(output_dir, "htdemucs_ft", song_name)
     vocals_path = os.path.join(separated_folder, "vocals.wav")
-    instrumental_path = os.path.join(separated_folder, "no_vocals.wav")  # This was missing before!
+    instrumental_path = os.path.join(separated_folder, "no_vocals.wav")
 
     if not os.path.exists(vocals_path):
-        # UPDATED COMMAND: Added "--two-stems=vocals"
         subprocess.run([
             sys.executable, "-m", "demucs",
-            "--two-stems=vocals",  # <--- CRITICAL FIX
+            "--two-stems=vocals",
             "-n", "htdemucs_ft",
             input_song_path, "-o", output_dir
         ], check=True)
@@ -32,15 +31,23 @@ def handle_voice_swap(input_song_path, model_path, index_path, output_dir, devic
     rvc_root = os.path.join(base_dir, "rvc_core")
     rvc_script = os.path.join("tools", "infer_cli.py")
 
-    # --- HANDLE INDEX FILE ---
-    real_index_path = index_path if os.path.exists(index_path) else ""
-
-    if real_index_path == "":
-        print("⚠️ WARNING: Index file not found. Running without index.")
+    # --- GPU vs CPU Configuration ---
+    if device_type == 'gpu':
+        rvc_device = "cuda:0"
+        is_half = "True"
+        f0_method = "rmvpe"  # High Quality for GPU
     else:
-        print(f"✅ Found Index File: {real_index_path}")
+        rvc_device = "cpu"
+        is_half = "False"
+        f0_method = "pm"  # Fast/Safe for CPU
 
-    # --- BUILD COMMAND ---
+    # --- BYPASS BROKEN INDEX ---
+    # Your index file is currently causing the crash.
+    # We disable it here to force the AI to use the Model Only.
+    # Once you verify this works, we can try to fix the index later.
+    real_index_path = ""
+    print("⚠️ NOTE: Running in Model-Only mode (Index disabled to prevent crash).")
+
     command = [
         sys.executable,
         rvc_script,
@@ -49,17 +56,14 @@ def handle_voice_swap(input_song_path, model_path, index_path, output_dir, devic
         "--model_name", f"{model_path}.pth",
         "--index_path", real_index_path,
         "--f0up_key", "0",
-        "--f0method", "pm",
+        "--f0method", f0_method,  # Uses rmvpe (Better) or pm (Faster) dynamically
         "--filter_radius", "3",
         "--resample_sr", "0",
         "--rms_mix_rate", "0.25",
-        "--protect", "0.33"
+        "--protect", "0.33",
+        "--device", rvc_device,
+        "--is_half", is_half
     ]
-
-    if device_type == 'gpu':
-        command.extend(["--device", "cuda:0", "--is_half", "True"])
-    else:
-        command.extend(["--device", "cpu"])
 
     print(f"Running RVC command: {' '.join(command)}")
 
